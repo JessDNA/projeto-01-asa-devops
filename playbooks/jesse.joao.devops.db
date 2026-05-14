@@ -1,0 +1,15 @@
+$TTL 86400
+@ IN SOA arq.jesse.joao.devops. root.jesse.joao.devops. (
+  2025082501 ;Serial
+  3600       ;Refresh
+  1800       ;Retry
+  604800     ;Expire
+  86400      ;Minimum TTL
+)
+  IN NS arq.jesse.joao.devops.
+  IN MX 10 arq.jesse.joao.devops.
+
+arq IN A 192.168.56.109
+db  IN A 192.168.56.134
+app IN A 192.168.56.194
+cli IN A 192.168.56.201

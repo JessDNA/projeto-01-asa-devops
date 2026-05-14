@@ -1,0 +1,11 @@
+zone "jesse.joao.devops" IN {
+  type master;
+  file "/etc/bind/jesse.joao.devops.db";
+  allow-update { none; };
+};
+
+zone "56.168.192.in-addr.arpa" IN {
+  type master;
+  file "/etc/bind/56.168.192.db";
+  allow-update { none; };
+};

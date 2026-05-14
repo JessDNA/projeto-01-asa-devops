@@ -45,6 +45,12 @@
         content: "Acesso apenas para pessoas com autorização expressa!!!"
         dest: /etc/motd
 
+    - name: Permitir sudo sem senha para grupo ifpb
+      lineinfile:
+        path: /etc/sudoers
+        line: "%ifpb ALL=(ALL) NOPASSWD:ALL"
+        state: present
+
   handlers:
     - name: restart ssh
       service:
