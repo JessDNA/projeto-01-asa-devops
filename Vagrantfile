@@ -40,7 +40,9 @@ Vagrant.configure("2") do |config|
   # Host Cliente (cli)
   config.vm.define "cli" do |cli|
     cli.vm.hostname = "cli.jesse.joao.devops"
-    cli.vm.memory = 1024 # RAM diferenciada
+    cli.vm.provider "virtualbox" do |v|
+      v.memory = 1024 # RAM diferenciada
+    end
     cli.vm.network "private_network", type: "dhcp"
   end
 end
