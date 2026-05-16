@@ -19,6 +19,9 @@
       apt:
         update_cache: yes
         upgrade: dist
+        dpkg_options: 'force-confold,force-confdef'
+      environment:
+        DEBIAN_FRONTEND: noninteractive
 
     - name: Ajustar a zona de tempo para America/Recife
       timezone:

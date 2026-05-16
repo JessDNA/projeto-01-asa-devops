@@ -56,15 +56,15 @@
         state: directory
         mode: '0755'
     
-    - name: Configurar autofs para /var/nfs
+    - name: Configurar auto.master para usar mapa direto
       lineinfile:
         path: /etc/auto.master
-        line: "/var/nfs /etc/auto.nfs --browse,--timeout=60"
+        line: "/- /etc/auto.nfs --browse,--timeout=60"
         state: present
     
-    - name: Criar mapa automático de montagem
+    - name: Criar mapa automático de montagem com caminho absoluto
       copy:
-        content: "nfs -rw,hard,intr,nosuid 192.168.56.109:/dados/nfs\n"
+        content: "/var/nfs -rw,hard,intr,nosuid 192.168.56.109:/dados/nfs\n"
         dest: /etc/auto.nfs
         mode: '0644'
     
@@ -72,10 +72,4 @@
       service:
         name: autofs
         state: started
-        enabled: yes
-    
-    - name: Adicionar entrada em /etc/fstab
-      lineinfile:
-        path: /etc/fstab
-        line: "192.168.56.109:/dados/nfs /var/nfs nfs defaults 0 0"
-        state: present
+        enabled: yes      

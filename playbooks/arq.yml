@@ -55,27 +55,29 @@
         name: nfs-kernel-server
         update_cache: yes
         state: present
+          
+    - name: Criar usuário nfs-ifpb
+      user:
+        name: nfs-ifpb
+        uid: 2000
+        group: nogroup
+        shell: /usr/sbin/nologin
+        state: present
     
     - name: Criar diretório /dados/nfs
       file:
         path: /dados/nfs
         state: directory
-        mode: '0777'
+        owner: nfs-ifpb
+        group: nogroup
+        mode: '0755'  
     
     - name: Configurar exports NFS
       lineinfile:
         path: /etc/exports
-        line: "/dados/nfs 192.168.56.0/24(rw,sync,all_squash,anonuid=1001,anongid=1001)"
+        line: "/dados/nfs 192.168.56.0/24(rw,sync,all_squash,anonuid=2000,anongid=65534)"
         state: present
-      notify: reload nfs
-    
-    - name: Criar usuário nfs-ifpb
-      user:
-        name: nfs-ifpb
-        uid: 1001
-        group: nogroup
-        shell: /usr/sbin/nologin
-        state: present
+      notify: reload nfs    
     
     - name: Iniciar serviço NFS
       service:
