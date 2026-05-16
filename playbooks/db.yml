@@ -1,4 +1,6 @@
 ---
+- import_playbook: common.yml
+
 - name: Configuração do Servidor de Banco de Dados (db)
   hosts: db
   become: yes

@@ -1,4 +1,6 @@
 ---
+- import_playbook: common.yml
+
 - name: Configuração do Servidor de Arquivos (arq)
   hosts: arq
   become: yes

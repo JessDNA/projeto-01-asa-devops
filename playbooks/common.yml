@@ -1,0 +1,170 @@
+---
+- name: Configurações Comuns - Todas as Máquinas
+  hosts: all
+  become: yes
+  
+  handlers:
+    - name: restart chrony
+      service:
+        name: chrony
+        state: restarted
+    
+    - name: restart ssh
+      service:
+        name: ssh
+        state: restarted
+  
+  tasks:
+    # 1. Update e Upgrade
+    - name: Atualizar lista de pacotes
+      apt:
+        update_cache: yes
+    
+    - name: Realizar upgrade dos pacotes
+      apt:
+        upgrade: full
+    
+    # 2. Instalar e configurar Chrony (NTP)
+    - name: Instalar Chrony
+      apt:
+        name: chrony
+        state: present
+    
+    - name: Configurar Chrony com pool.ntp.br
+      lineinfile:
+        path: /etc/chrony/chrony.conf
+        regexp: "^pool"
+        line: "pool pool.ntp.br iburst"
+        state: present
+      notify: restart chrony
+    
+    - name: Iniciar serviço Chrony
+      service:
+        name: chrony
+        state: started
+        enabled: yes
+    
+    # 3. Configurar Timezone
+    - name: Configurar timezone para America/Recife
+      timezone:
+        name: America/Recife
+    
+    # 4. Criar grupo ifpb
+    - name: Criar grupo ifpb
+      group:
+        name: ifpb
+        state: present
+    
+    # 5. Criar usuários jesse e joao com bash
+    - name: Criar usuário jesse
+      user:
+        name: jesse
+        group: ifpb
+        shell: /bin/bash
+        state: present
+    
+    - name: Criar usuário joao
+      user:
+        name: joao
+        group: ifpb
+        shell: /bin/bash
+        state: present
+    
+    # 6. Gerar chaves SSH para jesse e joao
+    - name: Criar diretório .ssh para jesse
+      file:
+        path: /home/jesse/.ssh
+        state: directory
+        owner: jesse
+        group: jesse
+        mode: '0700'
+    
+    - name: Gerar chave SSH para jesse
+      openssh_keypair:
+        path: /home/jesse/.ssh/id_rsa
+        owner: jesse
+        group: jesse
+        size: 2048
+    
+    - name: Criar diretório .ssh para joao
+      file:
+        path: /home/joao/.ssh
+        state: directory
+        owner: joao
+        group: joao
+        mode: '0700'
+    
+    - name: Gerar chave SSH para joao
+      openssh_keypair:
+        path: /home/joao/.ssh/id_rsa
+        owner: joao
+        group: joao
+        size: 2048
+    
+    # 7. Configurar SSH - PermitRootLogin
+    - name: Desabilitar PermitRootLogin
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^PermitRootLogin"
+        line: "PermitRootLogin no"
+        state: present
+      notify: restart ssh
+    
+    # 8. Configurar SSH - PasswordAuthentication
+    - name: Desabilitar PasswordAuthentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^PasswordAuthentication"
+        line: "PasswordAuthentication no"
+        state: present
+      notify: restart ssh
+    
+    # 9. Configurar SSH - AllowGroups
+    - name: Configurar AllowGroups para vagrant e ifpb
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^AllowGroups"
+        line: "AllowGroups vagrant ifpb"
+        state: present
+      notify: restart ssh
+    
+    # 10. Configurar SSH - Banner/Message of the Day
+    - name: Criar arquivo de banner SSH
+      copy:
+        content: "Acesso apenas para pessoas com autorização expressa!!!\n"
+        dest: /etc/ssh/banner
+        mode: '0644'
+    
+    - name: Configurar Banner no SSH
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^Banner"
+        line: "Banner /etc/ssh/banner"
+        state: present
+      notify: restart ssh
+    
+    # 11. Permissões .ssh chmod 0700 (já feito nas chaves)
+    - name: Garantir permissões .ssh para jesse
+      file:
+        path: /home/jesse/.ssh
+        owner: jesse
+        group: jesse
+        mode: '0700'
+        state: directory
+    
+    - name: Garantir permissões .ssh para joao
+      file:
+        path: /home/joao/.ssh
+        owner: joao
+        group: joao
+        mode: '0700'
+        state: directory
+    
+    # 12. Configurar SUDO para grupo ifpb sem senha
+    - name: Configurar SUDO sem senha para ifpb
+      lineinfile:
+        path: /etc/sudoers
+        regexp: "^%ifpb"
+        line: "%ifpb ALL=(ALL) NOPASSWD:ALL"
+        state: present
+        validate: "visudo -cf %s"

@@ -1,4 +1,6 @@
 ---
+- import_playbook: common.yml
+
 - name: Configuração do Servidor de Aplicação (app)
   hosts: app
   become: yes

@@ -1,4 +1,6 @@
 ---
+- import_playbook: common.yml
+
 - name: Configuração do Host Cliente (cli)
   hosts: cli
   become: yes
