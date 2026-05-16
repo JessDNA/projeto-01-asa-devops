@@ -1,0 +1,84 @@
+---
+- name: Configurações Gerais para Todas as Máquinas
+  hosts: all
+  become: yes
+
+  handlers:
+    - name: restart chrony
+      service:
+        name: chrony
+        state: restarted
+
+    - name: restart ssh
+      service:
+        name: ssh
+        state: restarted
+
+  tasks:
+    - name: Atualizar o sistema operacional (update e upgrade)
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Ajustar a zona de tempo para America/Recife
+      timezone:
+        name: America/Recife
+
+    - name: Instalar o servidor NTP (chrony)
+      apt:
+        name: chrony
+        state: present
+
+    - name: Configurar o servidor pool.ntp.br no chrony
+      lineinfile:
+        path: /etc/chrony/chrony.conf
+        regexp: '^pool'
+        line: 'pool pool.ntp.br iburst'
+        state: present
+      notify: restart chrony
+
+    - name: Criar o grupo ifpb
+      group:
+        name: ifpb
+        state: present
+
+    - name: Criar usuários da equipe, gerar chaves e incluir no grupo ifpb
+      user:
+        name: "{{ item }}"
+        groups: ifpb
+        append: yes
+        generate_ssh_key: yes
+        shell: /bin/bash
+      loop:
+        - jesse
+        - joao
+
+    - name: Permitir que usuários do grupo ifpb tenham acesso de root usando sudo
+      copy:
+        content: "%ifpb ALL=(ALL) NOPASSWD: ALL"
+        dest: /etc/sudoers.d/ifpb
+        mode: '0440'
+
+    - name: Instalar cliente NFS
+      apt:
+        name: nfs-common
+        state: present
+
+    - name: Configurar mensagem de saudação SSH
+      copy:
+        content: "Acesso apenas para pessoas com autorização expressa!!!\n"
+        dest: /etc/issue.net
+        mode: '0644'
+
+    - name: Configurar regras e restrições no Servidor SSH
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        state: present
+      loop:
+        - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+        - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
+        - { regexp: '^#?AllowGroups', line: 'AllowGroups vagrant ifpb' }
+        - { regexp: '^#?Banner', line: 'Banner /etc/issue.net' }
+      notify: restart ssh

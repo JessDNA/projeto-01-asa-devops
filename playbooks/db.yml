@@ -1,0 +1,65 @@
+---
+- name: Configuração do Servidor de Banco de Dados (db)
+  hosts: db
+  become: yes
+  
+  handlers:
+    - name: restart mariadb
+      service:
+        name: mariadb
+        state: restarted
+  
+  tasks:
+    - name: Instalar MariaDB Server
+      apt:
+        name: mariadb-server
+        update_cache: yes
+        state: present
+    
+    - name: Iniciar serviço MariaDB
+      service:
+        name: mariadb
+        state: started
+        enabled: yes
+    
+    - name: Instalar NFS Client
+      apt:
+        name: nfs-common
+        update_cache: yes
+        state: present
+    
+    - name: Instalar autofs
+      apt:
+        name: autofs
+        update_cache: yes
+        state: present
+    
+    - name: Criar ponto de montagem /var/nfs
+      file:
+        path: /var/nfs
+        state: directory
+        mode: '0755'
+    
+    - name: Configurar autofs para /var/nfs
+      lineinfile:
+        path: /etc/auto.master
+        line: "/var/nfs /etc/auto.nfs --browse,--timeout=60"
+        state: present
+    
+    - name: Criar mapa automático de montagem
+      copy:
+        content: "nfs -rw,hard,intr,nosuid 192.168.56.109:/dados/nfs\n"
+        dest: /etc/auto.nfs
+        mode: '0644'
+    
+    - name: Iniciar serviço autofs
+      service:
+        name: autofs
+        state: started
+        enabled: yes
+    
+    - name: Adicionar entrada em /etc/fstab
+      lineinfile:
+        path: /etc/fstab
+        line: "192.168.56.109:/dados/nfs /var/nfs nfs defaults 0 0"
+        state: present

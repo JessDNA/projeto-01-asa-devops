@@ -1,0 +1,89 @@
+---
+- name: Configuração do Servidor de Aplicação (app)
+  hosts: app
+  become: yes
+  
+  handlers:
+    - name: restart apache
+      service:
+        name: apache2
+        state: restarted
+  
+  tasks:
+    - name: Instalar Apache2
+      apt:
+        name: apache2
+        update_cache: yes
+        state: present
+    
+    - name: Criar página HTML
+      copy:
+        content: |
+          <html>
+          <body>
+          <h1>Servidor de Aplicação - jesse.joao.devops</h1>
+          <p>Desenvolvido por: Jesse e João</p>
+          <p>Disciplina: Administração de Sistemas Abertos</p>
+          <p>Professor: Leonidas Lima</p>
+          <p>Período: 2026.1</p>
+          </body>
+          </html>
+        dest: /var/www/html/index.html
+        mode: '0644'
+      notify: restart apache
+    
+    - name: Configurar charset UTF-8
+      lineinfile:
+        path: /etc/apache2/conf-enabled/charset.conf
+        regexp: "^AddDefaultCharset"
+        line: "AddDefaultCharset UTF-8"
+        state: present
+      notify: restart apache
+    
+    - name: Iniciar serviço Apache2
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+    
+    - name: Instalar NFS Client
+      apt:
+        name: nfs-common
+        update_cache: yes
+        state: present
+    
+    - name: Instalar autofs
+      apt:
+        name: autofs
+        update_cache: yes
+        state: present
+    
+    - name: Criar ponto de montagem /var/nfs
+      file:
+        path: /var/nfs
+        state: directory
+        mode: '0755'
+    
+    - name: Configurar autofs para /var/nfs
+      lineinfile:
+        path: /etc/auto.master
+        line: "/var/nfs /etc/auto.nfs --browse,--timeout=60"
+        state: present
+    
+    - name: Criar mapa automático de montagem
+      copy:
+        content: "nfs -rw,hard,intr,nosuid 192.168.56.109:/dados/nfs\n"
+        dest: /etc/auto.nfs
+        mode: '0644'
+    
+    - name: Iniciar serviço autofs
+      service:
+        name: autofs
+        state: started
+        enabled: yes
+    
+    - name: Adicionar entrada em /etc/fstab
+      lineinfile:
+        path: /etc/fstab
+        line: "192.168.56.109:/dados/nfs /var/nfs nfs defaults 0 0"
+        state: present
